@@ -46,16 +46,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { createProduct } from "@/app/utils/supabaseRequests"
+import { createProduct, createCustomerActivity } from "@/app/utils/supabaseRequests"
 
 interface Customer {
-  user_id: string
+  id: string
   name: string
   email: string
   phone: string
   likes: string
   dislikes: string
   preferences: string
+  user_id: string
   message?: {
     subject?: string
     content: string
@@ -337,13 +338,33 @@ export default function CustomerMessagesPage() {
     try {
       for (const customer of customers) {
         if (customer.message) {
+          // First send the message
           await sendMessage(customer)
+
+          // Then create an activity record
+          if (!userId) continue
+          const token = await getToken({ template: "supabase" })
+          if (!token) continue
+
+          await createCustomerActivity(
+            userId,
+            customer.id,
+            {
+              type: 'campaign',
+              productId: product?.id || '',
+              productName: product?.name || '',
+              message: typeof customer.message === 'string' 
+                ? customer.message 
+                : customer.message.content,
+              status: 'sent',
+              date: new Date().toISOString()
+            },
+            token
+          )
         }
       }
 
-   
-          router.push('/products')
-       
+      router.push('/products')
     } catch (error) {
       console.error('Error in sendAllMessages:', error)
       toast({

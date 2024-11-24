@@ -1,4 +1,3 @@
-import { OpenAIStream, StreamingTextResponse } from 'ai'
 import OpenAI from 'openai'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'

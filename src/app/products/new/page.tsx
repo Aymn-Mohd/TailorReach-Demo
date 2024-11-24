@@ -31,6 +31,7 @@ interface Customer {
   likes: string
   dislikes: string
   preferences: string
+  activities: string[]  
 }
 
 interface Product {

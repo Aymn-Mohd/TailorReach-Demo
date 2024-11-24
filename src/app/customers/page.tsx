@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { MoreHorizontal, Plus } from 'lucide-react'
+import { Activity, MoreHorizontal, Plus } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
 import {
@@ -50,6 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 import { fetchCustomers, deleteCustomer, updateCustomer, createCustomer } from "../utils/supabaseRequests"
 
@@ -61,6 +62,18 @@ interface Customer {
   likes: string
   dislikes: string
   preferences: string
+  activity: Activity[]
+  userid: string
+}
+
+interface Activity {
+  id: number
+  type: string
+  productId: string
+  productName: string
+  message: string
+  status: 'sent' | 'converting' | 'converted'
+  date: string
 }
 
 export default function CustomersPage() {
@@ -74,6 +87,8 @@ export default function CustomersPage() {
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
   const [isNewSheetOpen, setIsNewSheetOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false)
+  const [selectedCustomerActivities, setSelectedCustomerActivities] = useState<Activity[]>([])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -111,7 +126,30 @@ export default function CustomersPage() {
       cell: ({ row }) => <div className="capitalize">{row.getValue("preferences")}</div>,
     },
     {
+      id: "activity",
+      header: "Activity",
+      cell: ({ row }) => {
+        const customer = row.original
+        
+        return (
+          <Button 
+            variant="ghost" 
+            className="h-8 w-8 p-0" 
+            onClick={() => handleActivityClick(customer)}
+            disabled={!customer.activity?.length}
+          >
+            <span className="sr-only">View activity</span>
+            <Activity className={cn(
+              "h-4 w-4",
+              customer.activity?.length ? "text-primary" : "text-muted-foreground"
+            )} />
+          </Button>
+        )
+      }
+    },
+    {
       id: "actions",
+      header: "Actions",
       cell: ({ row }) => {
         const customer = row.original
 
@@ -274,7 +312,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const { error } = await createCustomer(clerkuser.id,newCustomer, token)
+      const { error } = await createCustomer(clerkuser.id, newCustomer, token)
       if (error) throw error
       await fetchCustomersData()
       setIsNewSheetOpen(false)
@@ -292,10 +330,13 @@ export default function CustomersPage() {
     }
   }
 
+  const handleActivityClick = (customer: Customer) => {
+    setSelectedCustomerActivities(customer.activity || [])
+    setIsActivitySheetOpen(true)
+  }
+
   return (
     <div className="container mx-auto py-2">
-       
-        
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Input
@@ -433,7 +474,8 @@ export default function CustomersPage() {
                 <Label htmlFor="edit-dislikes">Dislikes</Label>
                 <Textarea
                   id="edit-dislikes"
-                  name="dislikes"
+                  name="
+dislikes"
                   defaultValue={editingCustomer.dislikes}
                 />
               </div>
@@ -506,6 +548,63 @@ export default function CustomersPage() {
           </form>
         </SheetContent>
       </Sheet>
+
+      <Sheet open={isActivitySheetOpen} onOpenChange={setIsActivitySheetOpen}>
+        <SheetContent className="w-[400px] sm:w-[540px] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Customer Activity</SheetTitle>
+            <SheetDescription>
+              View all activities and interactions with this customer.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto mt-4">
+            <div className="space-y-4 pr-6">
+              {selectedCustomerActivities && selectedCustomerActivities.length > 0 ? (
+                selectedCustomerActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="rounded-lg border p-4 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <span className="text-sm font-medium">{activity.productName}</span>
+                        <p className="text-xs text-muted-foreground capitalize">{activity.type}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "flex items-center gap-2 text-xs px-2 py-1 rounded-full",
+                          {
+                            'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100': activity.status === 'converted',
+                            'bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100': activity.status === 'converting',
+                            'bg-muted text-muted-foreground': activity.status === 'sent'
+                          }
+                        )}>
+                          <div className={cn(
+                            "h-2 w-2 rounded-full",
+                            {
+                              'bg-green-500': activity.status === 'converted',
+                              'bg-yellow-500': activity.status === 'converting',
+                              'bg-gray-500': activity.status === 'sent'
+                            }
+                          )} />
+                          {activity.status}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{activity.message}</p>
+                    <p className="text-xs text-muted-foreground">{activity.date}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No activities found for this customer.
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
+

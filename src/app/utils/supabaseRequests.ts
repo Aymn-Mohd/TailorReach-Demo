@@ -15,10 +15,12 @@ export const fetchCustomers = async (userid: string, supabaseToken: string) => {
     .from('customers-'+userid)
     .select('*')
     .eq('userid', userid)
+  
   if (error) {
     console.error("Error fetching customers:", error)
     return null
   }
+  
   return data
 }
 
@@ -54,6 +56,60 @@ export const createCustomer = async (userid:any ,newCustomer: any, supabaseToken
     console.error("Error creating customer:", error)
   }
   return { data, error }
+}
+
+// Add this new function to create customer activities
+export const createCustomerActivity = async (
+  userid: string,
+  customerId: string,
+  activity: {
+    type: string
+    productId: string
+    productName: string
+    message: string
+    status: 'sent' | 'converting' | 'converted'
+    date: string
+  },
+  supabaseToken: string
+) => {
+  const supabase = supabaseClient(supabaseToken)
+  
+  // First get the current customer
+  const { data: customer, error: fetchError } = await supabase
+    .from('customers-' + userid)
+    .select('activity')
+    .eq('id', customerId)
+    .eq('userid', userid)
+    .single()
+
+  if (fetchError) {
+    console.error("Error fetching customer:", fetchError)
+    throw fetchError
+  }
+
+  // Create new activity with unique id
+  const newActivity = {
+    id: Date.now(),  // Use timestamp as unique id
+    ...activity
+  }
+
+  // Append new activity to existing activities array
+  const updatedActivities = customer?.activity 
+    ? [...customer.activity, newActivity]
+    : [newActivity]
+
+  // Update the customer with new activities
+  const { error: updateError } = await supabase
+    .from('customers-' + userid)
+    .update({ activity: updatedActivities })
+    .eq('id', customerId,).eq('userid', userid)
+
+  if (updateError) {
+    console.error("Error updating customer activities:", updateError)
+    throw updateError
+  }
+
+  return newActivity
 }
 
 // Campaign functions

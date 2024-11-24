@@ -1,3 +1,5 @@
+import { Toaster } from "@/components/ui/toaster"
+import { Toast } from "@radix-ui/react-toast"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -14,6 +16,7 @@ export default function CustomersLayout({
     <div className="container mx-auto py-1">
       <h2 className="text-3xl font-bold mb-2">Campaigns</h2>
       {children}
+      <Toaster />
     </div>
   )
 }
