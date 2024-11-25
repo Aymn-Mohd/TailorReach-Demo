@@ -20,18 +20,17 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { useToast } from "@/hooks/use-toast"
-import { fetchProducts, fetchCustomers } from '@/app/utils/supabaseRequests'
+import { fetchProducts, fetchCustomers, updateProductLikeEstimate, updateProductLikelihood } from '@/app/utils/supabaseRequests'
 
 interface Customer {
   id: string
-  user_id: string
   name: string
   email: string
-  phone: string
+  
   likes: string
   dislikes: string
   preferences: string
-  activities: string[]  
+
 }
 
 interface Product {
@@ -102,7 +101,15 @@ export default function Component() {
       })
       setCustomers(analyzedCustomers)
 
-      // Auto-select customers with green and yellow likelihoods
+      // Store likelihood statistics
+      await updateProductLikelihood(
+        id.toString(),
+        analyzedCustomers,
+        user.id,
+        token
+      )
+
+      // Auto-select customers with high and medium likelihood
       const autoSelectedCustomers = analyzedCustomers
         .filter(customer => customer.likelihood >= 50)
         .map(customer => customer.id)
@@ -170,14 +177,30 @@ export default function Component() {
       return
     }
 
-    const selectedCustomerData = customers.filter(c => 
-      selectedCustomers.includes(c.id)
-    )
+    // Filter customers and only keep essential data
+    const selectedCustomerData = customers
+      .filter(c => selectedCustomers.includes(c.id))
+      .map(({ 
+        id, 
+        name, 
+        email, 
+        likes, 
+        dislikes, 
+        preferences, 
+      }) => ({
+        id,
+        name,
+        email,
+        likes,
+        dislikes,
+        preferences,
+      }))
 
     const query = new URLSearchParams({
       customers: JSON.stringify(selectedCustomerData),
       product: JSON.stringify(product)
     }).toString()
+    
     router.push(`/products/new/message?${query}`)
   }
 
