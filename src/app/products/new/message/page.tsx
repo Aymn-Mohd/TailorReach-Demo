@@ -46,7 +46,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { createProduct, createCustomerActivity } from "@/app/utils/supabaseRequests"
+import { createProduct, createCustomerActivity, updateProductCustomers } from "@/app/utils/supabaseRequests"
 
 interface Customer {
   id: string
@@ -336,12 +336,31 @@ export default function CustomerMessagesPage() {
   async function sendAllMessages() {
     setIsSaving(true)
     try {
+      // Create an array to store all customer activities
+      const customerActivities = []
+
       for (const customer of customers) {
         if (customer.message) {
           // First send the message
           await sendMessage(customer)
 
-          // Then create an activity record
+          // Create activity object
+          const activity = {
+            customerId: customer.id,
+            customerName: customer.name,
+            type: 'product',
+            productId: product?.id || '',
+            productName: product?.name || '',
+            message: typeof customer.message === 'string' 
+              ? customer.message 
+              : customer.message.content,
+            status: 'sent',
+            date: new Date().toISOString()
+          }
+
+          customerActivities.push(activity)
+
+          // Then create an activity record in customer table
           if (!userId) continue
           const token = await getToken({ template: "supabase" })
           if (!token) continue
@@ -350,7 +369,7 @@ export default function CustomerMessagesPage() {
             userId,
             customer.id,
             {
-              type: 'campaign',
+              type: 'product',
               productId: product?.id || '',
               productName: product?.name || '',
               message: typeof customer.message === 'string' 
@@ -359,6 +378,19 @@ export default function CustomerMessagesPage() {
               status: 'sent',
               date: new Date().toISOString()
             },
+            token
+          )
+        }
+      }
+
+      // Update product with customer activities
+      if (product?.id && userId) {
+        const token = await getToken({ template: "supabase" })
+        if (token) {
+          await updateProductCustomers(
+            product.id,
+            customerActivities,
+            userId,
             token
           )
         }
@@ -394,6 +426,7 @@ export default function CustomerMessagesPage() {
       toast({
         title: "Copied",
         description: "Message copied to clipboard",
+        variant: "default",
       })
     }).catch(err => {
       console.error('Failed to copy: ', err);
