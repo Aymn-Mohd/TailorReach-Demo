@@ -1,4 +1,4 @@
-# TailorReach
+# TailorReach Demo
 
 **TailorReach** is a platform designed to simplify and personalize customer engagement for solopreneurs, sales professionals, and SMBs. By leveraging sentiment analysis, TailorReach helps users create personalized outreach messages based on each customer’s unique motivators.
 
