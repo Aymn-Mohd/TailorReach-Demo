@@ -4,7 +4,6 @@ import { ClerkProvider } from '@clerk/nextjs'
 import RootLayoutClient from "./layout-client"
 
 // Import both global styles and Tailwind
-import "./globals.css"
 import "@/app/styles/globals.css"
 
 const geistSans = localFont({

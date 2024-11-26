@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Activity, MoreHorizontal, Plus, CheckSquare, Square } from 'lucide-react'
+import { Activity, MoreHorizontal, Plus, CheckSquare, Square, Eye } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
 import {
@@ -418,10 +418,48 @@ export default function CustomersPage() {
     {
       accessorKey: "likes",
       header: "Likes",
+      cell: ({ row }) => {
+        const likes = row.getValue("likes") as string
+        if (!likes) return null
+        
+        const likeArray = likes.split(',').map(l => l.trim())
+        
+        return (
+          <div className="flex items-center gap-1">
+            <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium">
+              {likeArray[0]}
+            </span>
+            {likeArray.length > 1 && (
+              <span className="text-xs text-muted-foreground">
+                +{likeArray.length - 1}
+              </span>
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "dislikes",
       header: "Dislikes",
+      cell: ({ row }) => {
+        const dislikes = row.getValue("dislikes") as string
+        if (!dislikes) return null
+        
+        const dislikeArray = dislikes.split(',').map(d => d.trim())
+        
+        return (
+          <div className="flex items-center gap-1">
+            <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium">
+              {dislikeArray[0]}
+            </span>
+            {dislikeArray.length > 1 && (
+              <span className="text-xs text-muted-foreground">
+                +{dislikeArray.length - 1}
+              </span>
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "preferences",
@@ -466,6 +504,84 @@ export default function CustomersPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        )
+      },
+    },
+    {
+      id: "quickview",
+      header: "",
+      cell: ({ row }) => {
+        const customer = row.original
+        
+        return (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle className="text-xl">Customer Details</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-6">
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Name</div>
+                  <div className="text-base font-medium">{customer.name}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Email</div>
+                  <div className="text-base font-medium">{customer.email}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Phone</div>
+                  <div className="text-base font-medium">{customer.phone}</div>
+                </div>
+                {customer.preferences && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Preferences</div>
+                    <div className="text-base whitespace-pre-wrap">{customer.preferences}</div>
+                  </div>
+                )}
+                <div className="rounded-md border p-4 space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Likes</TableHead>
+                        <TableHead>Dislikes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="align-top">
+                          {customer.likes ? (
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                              {customer.likes.split(',').map((like, index) => (
+                                <li key={index}>{like.trim()}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">No likes recorded</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top">
+                          {customer.dislikes ? (
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                              {customer.dislikes.split(',').map((dislike, index) => (
+                                <li key={index}>{dislike.trim()}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">No dislikes recorded</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         )
       },
     },
