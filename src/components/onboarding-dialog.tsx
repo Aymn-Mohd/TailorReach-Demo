@@ -83,6 +83,12 @@ export default function OnboardingDialog() {
       })
 
       setIsOpen(false)
+      
+      // Add a small delay before refreshing to allow the toast to be seen
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+
     } catch (error) {
       console.error('Error in handleChatComplete:', error)
       toast({

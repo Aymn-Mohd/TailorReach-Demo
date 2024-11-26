@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { MoreHorizontal, Plus, CalendarIcon, Activity, CheckSquare, Square } from 'lucide-react'
+import { MoreHorizontal, Plus, CalendarIcon, Activity, CheckSquare, Square, Eye, Pencil, Trash } from 'lucide-react'
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { RadialBarChart, RadialBar, Legend, Tooltip } from 'recharts'
@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
 import { useRouter } from 'next/navigation'
+import { Progress } from "@/components/ui/progress"
 
 import { fetchCampaigns, deleteCampaign, updateCampaign, createCampaign, fetchProducts } from "@/app/utils/supabaseRequests"
 
@@ -91,6 +92,9 @@ interface Campaign {
 interface Product {
   id: number
   name: string
+  price?: number
+  description?: string
+  likeestimate?: number
 }
 
 const ActivitySheet = ({ customers, likeEstimate }: { 
@@ -473,11 +477,109 @@ export default function CampaignsPage() {
       },
     },
     {
+      id: "quickview",
+      header: "",
+      cell: ({ row }) => {
+        const campaign = row.original
+        const product = products.find(p => p.id.toString() === campaign.products)
+        
+        return (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle className="text-xl">Campaign Details</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-6">
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Name</div>
+                  <div className="text-base font-medium">{campaign.name}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Date</div>
+                  <div className="text-base font-medium">
+                    {new Date(campaign.campaign_date).toLocaleDateString()}
+                  </div>
+                </div>
+                {campaign.description && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Description</div>
+                    <div className="text-base whitespace-pre-wrap">{campaign.description}</div>
+                  </div>
+                )}
+                {product && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Product</div>
+                    <div className="rounded-md border p-4 space-y-3">
+                      <div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-muted-foreground">${product.price}</div>
+                      </div>
+                      {product.description && (
+                        <div className="text-sm text-muted-foreground line-clamp-2">
+                          {product.description}
+                        </div>
+                      )}
+                      {product.likeestimate !== undefined && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Likelihood Score</span>
+                            <span className="font-medium">{product.likeestimate}%</span>
+                          </div>
+                          <Progress 
+                            value={product.likeestimate} 
+                            className="h-1.5"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {campaign.keywords && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Keywords</div>
+                    <div className="flex flex-wrap gap-2">
+                      {campaign.keywords.split(',').map((keyword, index) => (
+                        <div 
+                          key={index}
+                          className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        >
+                          {keyword.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {campaign.likeestimate !== undefined && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Likelihood Score</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-medium">{campaign.likeestimate}%</span>
+                      </div>
+                      <Progress 
+                        value={campaign.likeestimate} 
+                        className="h-2"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        )
+      },
+    },
+    {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
         const campaign = row.original
-
+        
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -486,13 +588,20 @@ export default function CampaignsPage() {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => openEditSheet(campaign)}>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel className="font-semibold">Actions</DropdownMenuLabel>
+              <DropdownMenuItem 
+                onClick={() => openEditSheet(campaign)}
+                className="cursor-pointer"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDeleteCampaign(campaign.uid)}>
+              <DropdownMenuItem 
+                onClick={() => handleDeleteCampaign(campaign.uid)}
+                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <Trash className="mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -35,6 +35,13 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -69,6 +76,7 @@ interface Campaign {
   description?: string
   keywords?: string
   products?: string
+  likeestimate?: number
 }
 
 export default function Dashboard() {
@@ -94,14 +102,16 @@ export default function Dashboard() {
     fetchCustomers()
     fetchProducts()
     fetchCampaigns()
-    calculateStats()
   }, [])
+
+  useEffect(() => {
+    calculateStats()
+  }, [customers, products, campaigns])
 
   async function fetchCustomers() {
     const { data, error } = await supabase
       .from('customers-' + user?.id)
       .select('*')
-      .limit(5)
     if (error) {
       console.error('Error fetching customers:', error)
       toast({
@@ -150,8 +160,7 @@ export default function Dashboard() {
 
   // Add function to calculate statistics
   async function calculateStats() {
-    // This would normally come from your backend
-    const customerGrowth = ((customers.length - 10) / 10) * 100 // Example calculation
+    const customerGrowth = ((customers.length - 10) / 10) * 100
     const recentConversions = campaigns.filter(c => 
       new Date(c.campaign_date) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     ).length
@@ -171,23 +180,24 @@ export default function Dashboard() {
     setIsDetailsOpen(true)
   }
   const { isSignedIn, user, isLoaded } = useUser()
+
+  const getBestProduct = () => {
+    return products.reduce((best, current) => {
+      return (current.likeestimate ?? 0) > (best?.likeestimate ?? 0) ? current : best
+    }, products[0])
+  }
+
+  const getBestCampaign = () => {
+    return campaigns.reduce((best, current) => {
+      return (current.likeestimate ?? 0) > (best?.likeestimate ?? 0) ? current : best
+    }, campaigns[0])
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.fullName} 👋🏼</h1>
-          <div className="flex gap-4">
-            <Button asChild>
-              <Link href="/customers/new">
-                <Plus className="mr-2 h-4 w-4" /> Add Customer
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/campaigns/new">
-                <Calendar className="mr-2 h-4 w-4" /> New Campaign
-              </Link>
-            </Button>
-          </div>
         </div>
 
         {/* Statistics Grid */}
@@ -203,12 +213,9 @@ export default function Dashboard() {
                 {stats.customerGrowth > 0 ? '+' : ''}{stats.customerGrowth.toFixed(1)}% from last month
               </div>
               <Progress 
-                value={stats.activeCustomers / stats.totalCustomers * 100} 
+                value={Math.max(0, Math.min(100, stats.customerGrowth))} 
                 className="mt-2"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.activeCustomers} active customers
-              </p>
             </CardContent>
           </Card>
 
@@ -245,6 +252,100 @@ export default function Dashboard() {
               />
             </CardContent>
           </Card>
+        </div>
+
+        {/* Best Performers Carousel */}
+        <div className="mb-8">
+          <Carousel className="w-full">
+            <CarouselContent>
+              <CarouselItem>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Best Performing Campaign</span>
+                      <Megaphone className="h-4 w-4 text-muted-foreground" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {getBestCampaign() ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-semibold">{getBestCampaign()?.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(getBestCampaign()?.campaign_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>Likelihood Score</span>
+                            <span className="font-medium">{getBestCampaign()?.likeestimate}%</span>
+                          </div>
+                          <Progress 
+                            value={getBestCampaign()?.likeestimate} 
+                            className="h-2"
+                          />
+                        </div>
+                        {getBestCampaign()?.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {getBestCampaign()?.description}
+                          </p>
+                        )}
+                        {getBestCampaign()?.products && (
+                          <div className="rounded-md border p-3">
+                            <div className="text-sm text-muted-foreground mb-2">Associated Product</div>
+                            <div className="font-medium">
+                              {products.find(p => p.id.toString() === getBestCampaign()?.products)?.name}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No campaigns available</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+              <CarouselItem>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Best Performing Product</span>
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {getBestProduct() ? (
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-semibold">{getBestProduct()?.name}</h3>
+                          <p className="text-sm text-muted-foreground">${getBestProduct()?.price}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>Likelihood Score</span>
+                            <span className="font-medium">{getBestProduct()?.likeestimate}%</span>
+                          </div>
+                          <Progress 
+                            value={getBestProduct()?.likeestimate} 
+                            className="h-2"
+                          />
+                        </div>
+                        {getBestProduct()?.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {getBestProduct()?.description}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No products available</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
         </div>
 
         {/* Tabs for different sections */}
@@ -339,7 +440,7 @@ export default function Dashboard() {
                 </Table>
               </CardContent>
               <CardFooter>
-                <Button asChild>
+                <Button asChild variant="outline" className="w-full">
                   <Link href="/products">
                     View All Products <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
@@ -381,7 +482,7 @@ export default function Dashboard() {
                 </Table>
               </CardContent>
               <CardFooter>
-                <Button asChild>
+                <Button asChild variant="outline" className="w-full">
                   <Link href="/campaigns">
                     View All Campaigns <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>

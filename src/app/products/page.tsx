@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Switch } from "@/components/ui/switch"
 import { RadialBarChart, RadialBar, Legend, Tooltip } from 'recharts'
+import { Progress } from "@/components/ui/progress"
 
 import { fetchProducts, deleteProduct, updateProduct, createProduct } from "@/app/utils/supabaseRequests"
 
@@ -409,40 +410,6 @@ export default function ProductsPage() {
 
   const columns: ColumnDef<Product>[] = [
     {
-      id: "select",
-      header: ({ table }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleSelectAll}
-          aria-label={selectedProducts.length === products.length ? "Deselect all products" : "Select all products"}
-        >
-          {selectedProducts.length === products.length ? (
-            <CheckSquare className="h-4 w-4" />
-          ) : (
-            <Square className="h-4 w-4" />
-          )}
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const product = row.original
-        return (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleSelectProduct(product.id)}
-            aria-label={selectedProducts.includes(product.id) ? "Deselect product" : "Select product"}
-          >
-            {selectedProducts.includes(product.id) ? (
-              <CheckSquare className="h-4 w-4" />
-            ) : (
-              <Square className="h-4 w-4" />
-            )}
-          </Button>
-        )
-      },
-    },
-    {
       accessorKey: "name",
       header: "Name",
       cell: ({ row }) => <div className="capitalize">{row.getValue("name")}</div>,
@@ -482,6 +449,72 @@ export default function ProductsPage() {
       },
     },
     {
+      id: "quickview",
+      header: "",
+      cell: ({ row }) => {
+        const product = row.original
+        return (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle className="text-xl">Product Details</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-6">
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Name</div>
+                  <div className="text-base font-medium">{product.name}</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">Price</div>
+                  <div className="text-base font-medium">${product.price}</div>
+                </div>
+                {product.description && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Description</div>
+                    <div className="text-base whitespace-pre-wrap">{product.description}</div>
+                  </div>
+                )}
+                {product.keywords && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Keywords</div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.keywords.split(',').map((keyword, index) => (
+                        <div 
+                          key={index}
+                          className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        >
+                          {keyword.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {product.likeestimate !== undefined && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground">Likelihood Score</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-medium">{product.likeestimate}%</span>
+                      </div>
+                      <Progress 
+                        value={product.likeestimate} 
+                        className="h-2"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        )
+      },
+    },
+    {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
@@ -495,56 +528,25 @@ export default function ProductsPage() {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel className="font-semibold">Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => router.push(`/products/new?id=${product.id}`)}
-                className="text-blue-600 focus:text-blue-600 focus:bg-blue-50 cursor-pointer"
+                className="cursor-pointer"
               >
                 <Send className="mr-2 h-4 w-4" />
                 Send Messages
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Sheet>
-                  <SheetTrigger className="w-full text-left flex items-center text-sm px-2 py-1.5 text-green-600 focus:text-green-600 focus:bg-green-50 cursor-pointer">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Quick View
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Product Details</SheetTitle>
-                    </SheetHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Name</h3>
-                        <p className="text-sm">{product.name}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Price</h3>
-                        <p className="text-sm">${product.price}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Description</h3>
-                        <p className="text-sm whitespace-pre-wrap">{product.description}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Keywords</h3>
-                        <p className="text-sm">{product.keywords}</p>
-                      </div>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => openEditSheet(product)}
-                className="text-amber-600 focus:text-amber-600 focus:bg-amber-50 cursor-pointer"
+                className="cursor-pointer"
               >
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleDeleteProduct(product.id)}
-                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
               >
                 <Trash className="mr-2 h-4 w-4" />
                 Delete

@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
-import "@/app/styles/globals.css"
-import RootLayoutClient from "./layout-client"
 import { ClerkProvider } from '@clerk/nextjs'
+import RootLayoutClient from "./layout-client"
+
+// Import both global styles and Tailwind
+import "./globals.css"
+import "@/app/styles/globals.css"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,11 +31,11 @@ export async function generateMetadata({ params }: { params: { slug: string[] } 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <ClerkProvider>
-        <body>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <ClerkProvider>
           <RootLayoutClient>{children}</RootLayoutClient>
-        </body>
-      </ClerkProvider>
+        </ClerkProvider>
+      </body>
     </html>
   )
 }
