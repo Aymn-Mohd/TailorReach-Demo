@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+---
 
-## Getting Started
+# TailorReach
 
-First, run the development server:
+**TailorReach** is a platform designed to simplify and personalize customer engagement for solopreneurs, sales professionals, and SMBs. By leveraging sentiment analysis, TailorReach helps users create personalized outreach messages based on each customer’s unique motivators.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Sentiment Analysis**: Understand the tone and emotions of your customers to tailor your messages effectively.
+- **Message Personalization**: Generate messages that reflect your style while aligning with the customer's personal motivators.
+- **Simple UI**: No complex workflows—just a clean, easy-to-use interface with a few buttons to get the job done.
+- **No Learning Curve**: A user-friendly experience that doesn't require training or a steep learning curve.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Frontend**: Next.js, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase, Clerk
 
-## Learn More
+## Demo
 
-To learn more about Next.js, take a look at the following resources:
+Check out our demo video: [Link](https://www.youtube.com/watch?v=zO0kKSgBAU4&ab_channel=TailorReach)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Get Started
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. [Join the waitlist](https://getwaitlist.com/waitlist/19812) to be the first to try TailorReach.
+2. Follow us on:
+   - [Twitter](https://x.com/TailorReach)
+   - [Instagram](https://www.instagram.com/tailorreach.ai/)
+   - [YouTube](https://www.youtube.com/channel/UC62D0itEEMqmNH5yCnf8nHg/)
 
-## Deploy on Vercel
+## Roadmap
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+You can view our [roadmap here](https://ctf.aymnmohd.tech/tailorreach/roadmap).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
