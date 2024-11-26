@@ -20,17 +20,24 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { useToast } from "@/hooks/use-toast"
-import { fetchProducts, fetchCustomers, updateProductLikeEstimate, updateProductLikelihood } from '@/app/utils/supabaseRequests'
+import { fetchProducts, fetchCustomers, fetchCampaigns, updateProductLikelihood, updateCampaignLikelihood } from '@/app/utils/supabaseRequests'
 
 interface Customer {
   id: string
   name: string
   email: string
-  
   likes: string
   dislikes: string
   preferences: string
+}
 
+interface Campaign {
+  uid: string
+  name: string
+  description: string
+  keywords: string
+  products: string
+  campaign_date: string
 }
 
 interface Product {
@@ -39,7 +46,6 @@ interface Product {
   price: string
   description: string
   keywords: string
-  category: string
 }
 
 interface AnalysisResult {
@@ -50,6 +56,7 @@ interface AnalysisResult {
 }
 
 export default function Component() {
+  const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [product, setProduct] = useState<Product | null>(null)
   const [customers, setCustomers] = useState<(Customer & AnalysisResult)[]>([])
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([])
@@ -62,24 +69,32 @@ export default function Component() {
   const { getToken } = useAuth()
 
   useEffect(() => {
-    const productId = searchParams.get('id')
-    if (productId && user) {
-      fetchProductAndCustomers(parseInt(productId))
+    const campaignId = searchParams.get('campaignId')
+    const productId = searchParams.get('productId')
+    if (campaignId && productId && user) {
+      fetchCampaignAndCustomers(campaignId, parseInt(productId))
     }
   }, [searchParams, user])
 
-  async function fetchProductAndCustomers(id: number) {
+  async function fetchCampaignAndCustomers(campaignId: string, productId: number) {
     setIsLoading(true)
-    setLoadingStep("Fetching product data...")
+    setLoadingStep("Fetching campaign data...")
     try {
       if (!user) throw new Error("No user found")
       const token = await getToken({ template: "supabase" })
       if (!token) throw new Error("No token found")
 
-      const [productData, customersData] = await Promise.all([
-        fetchProduct(id, user.id, token),
+      // Fetch campaign, product, and customers data
+      const [campaignsData, productData, customersData] = await Promise.all([
+        fetchCampaigns(user.id, token),
+        fetchProduct(productId, user.id, token),
         fetchCustomers(user.id, token)
       ])
+
+      // Find the specific campaign
+      const campaignData = campaignsData?.find(c => c.uid === campaignId)
+      if (!campaignData) throw new Error("Campaign not found")
+      setCampaign(campaignData)
 
       if (!productData) throw new Error("Product not found")
       setProduct(productData)
@@ -90,7 +105,7 @@ export default function Component() {
       }
 
       setLoadingStep("Analyzing customer interest...")
-      const analysisResults = await analyzeCustomerInterest(productData, user.id, token)
+      const analysisResults = await analyzeCustomerInterest(campaignData, user.id, token)
       const analyzedCustomers = customersData.map(customer => {
         const analysis = analysisResults.find(result => result.customerId === customer.id)
         return {
@@ -101,9 +116,9 @@ export default function Component() {
       })
       setCustomers(analyzedCustomers)
 
-      // Store likelihood statistics
-      await updateProductLikelihood(
-        id.toString(),
+      // Store likelihood statistics for campaign only
+      await updateCampaignLikelihood(
+        campaignId,
         analyzedCustomers,
         user.id,
         token
@@ -116,7 +131,7 @@ export default function Component() {
       setSelectedCustomers(autoSelectedCustomers)
 
     } catch (error) {
-      console.error('Error fetching product and analyzing customers:', error)
+      console.error('Error fetching data:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An unknown error occurred",
@@ -133,11 +148,16 @@ export default function Component() {
     return products ? products.find(p => p.id === id) || null : null
   }
 
-  async function analyzeCustomerInterest(product: Product, userId: string, token: string): Promise<AnalysisResult[]> {
-    const response = await fetch('/api/analyze-customer-interest-product', {
+  async function analyzeCustomerInterest(campaign: Campaign, userId: string, token: string): Promise<AnalysisResult[]> {
+    const response = await fetch('/api/analyze-customer-interest-cam', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product, userId, supabaseToken: token }),
+      body: JSON.stringify({ 
+        campaign,
+        product,
+        userId, 
+        supabaseToken: token 
+      }),
     })
 
     if (!response.ok) {
@@ -198,10 +218,11 @@ export default function Component() {
 
     const query = new URLSearchParams({
       customers: JSON.stringify(selectedCustomerData),
+      campaign: JSON.stringify(campaign),
       product: JSON.stringify(product)
     }).toString()
     
-    router.push(`/products/new/message?${query}`)
+    router.push(`/campaigns/new/message?${query}`)
   }
 
   if (isLoading) {

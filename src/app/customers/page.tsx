@@ -160,16 +160,17 @@ const ActivitySheet = ({ activities }: { activities: CustomerActivity[] }) => {
           <Activity className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[600px] overflow-y-auto">
+      <SheetContent className="w-[400px] sm:w-[600px] flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Activities ({activities?.length})</SheetTitle>
           <SheetDescription>
             Recent activities for this customer
           </SheetDescription>
         </SheetHeader>
-        
-        <div className="mt-6 space-y-6">
-          <div className="space-y-4">
+
+        {/* Fixed Filters Section */}
+        <div className="border-b bg-background">
+          <div className="space-y-4 py-4">
             <div className="relative">
               <Input
                 placeholder="Search activities..."
@@ -265,11 +266,14 @@ const ActivitySheet = ({ activities }: { activities: CustomerActivity[] }) => {
               </Button>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-4">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="py-6 space-y-4">
             {filteredActivities?.length ? (
               <>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground px-1">
                   Showing {filteredActivities.length} of {activities.length} activities
                 </div>
                 {filteredActivities.map((activity, index) => (
@@ -279,14 +283,35 @@ const ActivitySheet = ({ activities }: { activities: CustomerActivity[] }) => {
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-semibold">{activity.productName}</h4>
-                      <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      <div className={`inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         getStatusStyles(activity.status)
                       }`}>
+                        <div className={`h-2 w-2 rounded-full ${
+                          activity.status === 'sent' 
+                            ? 'bg-gray-500' 
+                            : activity.status === 'converting'
+                            ? 'bg-amber-500'
+                            : 'bg-green-500'
+                        }`} />
                         {activity.status}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {activity.message}
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      {activity.message.includes('Subject:') ? (
+                        <>
+                          <div className="font-medium">
+                            {activity.message.split('\n\n')[0]}
+                          </div>
+                          <div className="pt-1">
+                            {activity.message
+                              .split('\n\n')
+                              .slice(1)
+                              .join('\n\n')}
+                          </div>
+                        </>
+                      ) : (
+                        <div>{activity.message}</div>
+                      )}
                     </div>
                     <div className="flex justify-between items-center text-xs text-muted-foreground">
                       <span>{activity.type}</span>

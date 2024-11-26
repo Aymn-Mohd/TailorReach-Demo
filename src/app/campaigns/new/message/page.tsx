@@ -46,7 +46,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { createProduct, createCustomerActivity, updateProductCustomers } from "@/app/utils/supabaseRequests"
+import { createCustomerActivity, updateCampaignCustomers } from "@/app/utils/supabaseRequests"
 
 interface Customer {
   id: string
@@ -63,6 +63,15 @@ interface Customer {
   } | string
 }
 
+interface Campaign {
+  uid: string
+  name: string
+  description: string
+  keywords: string
+  products: string
+  campaign_date: string
+}
+
 interface Product {
   id: string
   name: string
@@ -72,12 +81,13 @@ interface Product {
   userid: string
 }
 
-export default function CustomerMessagesPage() {
+export default function CampaignMessagesPage() {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [customers, setCustomers] = React.useState<Customer[]>([])
+  const [campaign, setCampaign] = React.useState<Campaign | null>(null)
   const [product, setProduct] = React.useState<Product | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
   const [editingCustomer, setEditingCustomer] = React.useState<Customer | null>(null)
@@ -176,30 +186,33 @@ export default function CustomerMessagesPage() {
 
   React.useEffect(() => {
     const customersParam = searchParams.get('customers')
+    const campaignParam = searchParams.get('campaign')
     const productParam = searchParams.get('product')
 
-    if (customersParam && productParam) {
+    if (customersParam && campaignParam) {
       const parsedCustomers = JSON.parse(customersParam)
-      const parsedProduct = JSON.parse(productParam)
+      const parsedCampaign = JSON.parse(campaignParam)
+      const parsedProduct = productParam ? JSON.parse(productParam) : null
       setCustomers(parsedCustomers)
+      setCampaign(parsedCampaign)
       setProduct(parsedProduct)
-      generateAllMessages(parsedCustomers, parsedProduct)
+      generateAllMessages(parsedCustomers, parsedCampaign, parsedProduct)
     } else {
       toast({
         title: "Error",
-        description: "Failed to load customer and product data",
+        description: "Failed to load customer and campaign data",
         variant: "destructive",
       })
       setIsLoading(false)
     }
   }, [searchParams, toast])
 
-  async function generateAllMessages(customers: Customer[], product: Product) {
+  async function generateAllMessages(customers: Customer[], campaign: Campaign, product: Product | null) {
     setIsLoading(true)
     const updatedCustomers = await Promise.all(
       customers.map(async (customer) => {
         if (!customer.message) {
-          const message = await generateMessageForCustomer(customer, product)
+          const message = await generateMessageForCustomer(customer, campaign, product)
           return { ...customer, message }
         }
         return customer
@@ -209,14 +222,14 @@ export default function CustomerMessagesPage() {
     setIsLoading(false)
   }
 
-  async function generateMessageForCustomer(customer: Customer, product: Product): Promise<Customer['message']> {
+  async function generateMessageForCustomer(customer: Customer, campaign: Campaign, product: Product | null): Promise<Customer['message']> {
     try {
-      const response = await fetch('/api/generate-message-product', {
+      const response = await fetch('/api/generate-message-campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ customer, product }),
+        body: JSON.stringify({ customer, campaign, product }),
       })
 
       if (!response.ok) throw new Error('Failed to generate message')
@@ -230,21 +243,21 @@ export default function CustomerMessagesPage() {
   }
 
   async function generateMessage(customer: Customer) {
-    if (!product) {
+    if (!campaign) {
       toast({
         title: "Error",
-        description: "No product available",
+        description: "No campaign available",
         variant: "destructive",
       })
       return
     }
 
     try {
-      const message = await generateMessageForCustomer(customer, product)
+      const message = await generateMessageForCustomer(customer, campaign, product)
       
       setCustomers(prev =>
         prev.map(c =>
-          c.user_id === customer.user_id
+          c.id === customer.id
             ? { ...c, message }
             : c
         )
@@ -292,7 +305,7 @@ export default function CustomerMessagesPage() {
 
     setCustomers(prev =>
       prev.map(c =>
-        c.user_id === editingCustomer.user_id
+        c.id === editingCustomer.id
           ? updatedCustomer
           : c
       )
@@ -348,7 +361,7 @@ export default function CustomerMessagesPage() {
           const activity = {
             customerId: customer.id,
             customerName: customer.name,
-            type: 'product',
+            type: 'campaign',
             productId: product?.id || '',
             productName: product?.name || '',
             message: typeof customer.message === 'string' 
@@ -369,7 +382,7 @@ export default function CustomerMessagesPage() {
             userId,
             customer.id,
             {
-              type: 'product',
+              type: 'campaign',
               productId: product?.id || '',
               productName: product?.name || '',
               message: typeof customer.message === 'string' 
@@ -383,12 +396,12 @@ export default function CustomerMessagesPage() {
         }
       }
 
-      // Update product with customer activities
-      if (product?.id && userId) {
+      // Update campaign with customer activities
+      if (campaign?.uid && userId) {
         const token = await getToken({ template: "supabase" })
         if (token) {
-          await updateProductCustomers(
-            product.id,
+          await updateCampaignCustomers(
+            campaign.uid,
             customerActivities,
             userId,
             token
@@ -396,12 +409,12 @@ export default function CustomerMessagesPage() {
         }
       }
 
-      router.push('/products')
+      router.push('/campaigns')
     } catch (error) {
       console.error('Error in sendAllMessages:', error)
       toast({
         title: "Error",
-        description: "An error occurred while sending messages or adding product",
+        description: "An error occurred while sending messages",
         variant: "destructive",
       })
     } finally {
@@ -444,7 +457,7 @@ export default function CustomerMessagesPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <h2 className="text-2xl font-semibold mb-2">
-            {isLoading ? "Loading..." : "Sending messages and saving product..."}
+            {isLoading ? "Loading..." : "Sending messages..."}
           </h2>
           <p className="text-gray-600">
             {isLoading ? "Please wait while we prepare your data." : "This may take a moment. Please don't close the page."}
@@ -456,9 +469,7 @@ export default function CustomerMessagesPage() {
 
   return (
     <div className="container mx-auto py-10">
-      
       <div className="flex items-center justify-between py-4">
-      
         <Input
           placeholder="Filter by name..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -471,6 +482,7 @@ export default function CustomerMessagesPage() {
           <Send className="mr-2 h-4 w-4" /> {isLoading || isSaving ? "Processing..." : "Send All Messages"}
         </Button>
       </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -513,6 +525,7 @@ export default function CustomerMessagesPage() {
           </TableBody>
         </Table>
       </div>
+
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"

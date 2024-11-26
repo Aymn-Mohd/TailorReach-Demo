@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, FormEvent } from "react"
 import { useUser, useAuth } from "@clerk/nextjs"
-import { MoreHorizontal, Plus, Activity, CheckSquare, Square } from 'lucide-react'
+import { MoreHorizontal, Plus, Activity, CheckSquare, Square, Send, Eye, Pencil, Trash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
   ColumnDef,
@@ -204,76 +204,74 @@ const ActivitySheet = ({ customers, likeEstimate }: {
             </div>
           </div>
 
-          {/* Search and Filters Card */}
+          {/* Search and Filters without Card */}
           <div className="space-y-4 pb-6 px-4">
-            <div className="border rounded-lg p-4 bg-card space-y-4">
-              <div className="relative">
-                <Input
-                  placeholder="Search activities..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+            <div className="relative">
+              <Input
+                placeholder="Search activities..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
-                <svg
-                  className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
+              </svg>
+              {(searchQuery || statusFilter !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="absolute right-2 top-1.5 h-7 text-muted-foreground hover:text-foreground"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                {(searchQuery || statusFilter !== "all") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="absolute right-2 top-1.5 h-7 text-muted-foreground hover:text-foreground"
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
+                  Clear
+                </Button>
+              )}
+            </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={statusFilter === "all" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("all")}
-                  className="rounded-full"
-                  size="sm"
-                >
-                  All
-                </Button>
-                <Button
-                  variant={statusFilter === "sent" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("sent")}
-                  className="rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900"
-                  size="sm"
-                >
-                  Sent
-                </Button>
-                <Button
-                  variant={statusFilter === "converting" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("converting")}
-                  className="rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 hover:text-amber-900"
-                  size="sm"
-                >
-                  Converting
-                </Button>
-                <Button
-                  variant={statusFilter === "converted" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("converted")}
-                  className="rounded-full bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900"
-                  size="sm"
-                >
-                  Converted
-                </Button>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                onClick={() => setStatusFilter("all")}
+                className="rounded-full"
+                size="sm"
+              >
+                All
+              </Button>
+              <Button
+                variant={statusFilter === "sent" ? "default" : "outline"}
+                onClick={() => setStatusFilter("sent")}
+                className="rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900"
+                size="sm"
+              >
+                Sent
+              </Button>
+              <Button
+                variant={statusFilter === "converting" ? "default" : "outline"}
+                onClick={() => setStatusFilter("converting")}
+                className="rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 hover:text-amber-900"
+                size="sm"
+              >
+                Converting
+              </Button>
+              <Button
+                variant={statusFilter === "converted" ? "default" : "outline"}
+                onClick={() => setStatusFilter("converted")}
+                className="rounded-full bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900"
+                size="sm"
+              >
+                Converted
+              </Button>
             </div>
           </div>
         </div>
@@ -293,23 +291,47 @@ const ActivitySheet = ({ customers, likeEstimate }: {
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-semibold">{activity.customerName}</h4>
-                      <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      <div className={`inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         getStatusStyles(activity.status)
                       }`}>
+                        <div className={`h-2 w-2 rounded-full ${
+                          activity.status === 'sent' 
+                            ? 'bg-gray-500' 
+                            : activity.status === 'converting'
+                            ? 'bg-amber-500'
+                            : 'bg-green-500'
+                        }`} />
                         {activity.status}
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {activity.message}
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      {activity.message.includes('Subject:') ? (
+                        <>
+                          <div className="font-medium">
+                            {activity.message.split('\n\n')[0]}
+                          </div>
+                          <div className="pt-1">
+                            {activity.message
+                              .split('\n\n')
+                              .slice(1)
+                              .join('\n\n')}
+                          </div>
+                        </>
+                      ) : (
+                        <div>{activity.message}</div>
+                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(activity.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                    <div className="flex justify-between items-center text-xs text-muted-foreground">
+                      <span>{activity.type}</span>
+                      <span>
+                        {new Date(activity.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -323,6 +345,39 @@ const ActivitySheet = ({ customers, likeEstimate }: {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+const QuickViewSheet = ({ product }: { product: Product }) => {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm">Quick View</Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Product Details</SheetTitle>
+        </SheetHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <h3 className="font-semibold">Name</h3>
+            <p>{product.name}</p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold">Price</h3>
+            <p>${product.price}</p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold">Description</h3>
+            <p className="whitespace-pre-wrap">{product.description}</p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold">Keywords</h3>
+            <p>{product.keywords}</p>
           </div>
         </div>
       </SheetContent>
@@ -400,7 +455,14 @@ export default function ProductsPage() {
     {
       accessorKey: "description",
       header: "Description",
-      cell: ({ row }) => <div className="max-w-[500px] truncate">{row.getValue("description")}</div>,
+      cell: ({ row }) => {
+        const description = row.getValue("description") as string
+        return (
+          <div className="max-w-[300px] truncate">
+            {description}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "keywords",
@@ -433,15 +495,58 @@ export default function ProductsPage() {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-[160px]">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => router.push(`/products/new?id=${product.id}`)}>
+              <DropdownMenuItem
+                onClick={() => router.push(`/products/new?id=${product.id}`)}
+                className="text-blue-600 focus:text-blue-600 focus:bg-blue-50 cursor-pointer"
+              >
+                <Send className="mr-2 h-4 w-4" />
                 Send Messages
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openEditSheet(product)}>
+              <DropdownMenuItem asChild>
+                <Sheet>
+                  <SheetTrigger className="w-full text-left flex items-center text-sm px-2 py-1.5 text-green-600 focus:text-green-600 focus:bg-green-50 cursor-pointer">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Quick View
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Product Details</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Name</h3>
+                        <p className="text-sm">{product.name}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Price</h3>
+                        <p className="text-sm">${product.price}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Description</h3>
+                        <p className="text-sm whitespace-pre-wrap">{product.description}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Keywords</h3>
+                        <p className="text-sm">{product.keywords}</p>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => openEditSheet(product)}
+                className="text-amber-600 focus:text-amber-600 focus:bg-amber-50 cursor-pointer"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDeleteProduct(product.id)}>
+              <DropdownMenuItem 
+                onClick={() => handleDeleteProduct(product.id)}
+                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+              >
+                <Trash className="mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

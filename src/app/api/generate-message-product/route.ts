@@ -56,7 +56,7 @@ Please maintain consistency with the user's writing style and professional level
 
     // Generate the message using OpenAI
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",

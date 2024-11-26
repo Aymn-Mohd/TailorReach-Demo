@@ -137,6 +137,19 @@ export const deleteCampaign = async (uid: string, userid: string, supabaseToken:
   return { error }
 }
 
+// Add this interface for campaign activities
+interface CampaignCustomerActivity {
+  customerId: string
+  customerName: string
+  type: string
+  productId: string
+  productName: string
+  message: string
+  status: string
+  date: string
+}
+
+// Update the updateCampaign function
 export const updateCampaign = async (uid: string, updatedCampaign: any, userid: string, supabaseToken: string) => {
   const supabase = supabaseClient(supabaseToken)
   const { data, error } = await supabase
@@ -146,6 +159,47 @@ export const updateCampaign = async (uid: string, updatedCampaign: any, userid: 
     .eq("userid", userid)
   if (error) {
     console.error("Error updating campaign:", error)
+  }
+  return { data, error }
+}
+
+// Add the new updateCampaignCustomers function
+export const updateCampaignCustomers = async (
+  campaignId: string,
+  customerActivities: CampaignCustomerActivity[],
+  userid: string,
+  supabaseToken: string
+) => {
+  const supabase = supabaseClient(supabaseToken)
+  
+  // First get the current campaign data
+  const { data: currentCampaign, error: fetchError } = await supabase
+    .from("campaigns-"+userid)
+    .select('customers')
+    .eq("uid", campaignId)
+    .eq("userid", userid)
+    .single()
+
+  if (fetchError) {
+    console.error("Error fetching campaign:", fetchError)
+    return { error: fetchError }
+  }
+
+  // Merge existing customers data with new activities
+  const existingCustomers = currentCampaign?.customers || []
+  const mergedCustomers = [...existingCustomers, ...customerActivities]
+
+  // Update the campaign with merged customers data
+  const { data, error } = await supabase
+    .from("campaigns-"+userid)
+    .update({
+      customers: mergedCustomers
+    })
+    .eq("uid", campaignId)
+    .eq("userid", userid)
+
+  if (error) {
+    console.error("Error updating campaign customers:", error)
   }
   return { data, error }
 }
@@ -302,6 +356,31 @@ export const updateProductLikelihood = async (
 
   if (error) {
     console.error("Error updating product likelihood:", error)
+  }
+  return { data, error }
+}
+
+export const updateCampaignLikelihood = async (
+  campaignId: string,
+  analyzedCustomers: { likelihood: number }[],
+  userid: string,
+  supabaseToken: string
+) => {
+  const supabase = supabaseClient(supabaseToken)
+
+  // Calculate average likelihood
+  const totalLikelihood = analyzedCustomers.reduce((sum, customer) => sum + customer.likelihood, 0)
+  const likeestimate = Math.round(totalLikelihood / analyzedCustomers.length)
+
+  // Update the campaign with the average likelihood
+  const { data, error } = await supabase
+    .from("campaigns-"+userid)
+    .update({ likeestimate })
+    .eq("uid", campaignId)
+    .eq("userid", userid)
+
+  if (error) {
+    console.error("Error updating campaign likelihood:", error)
   }
   return { data, error }
 }
