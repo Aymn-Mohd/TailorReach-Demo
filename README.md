@@ -1,5 +1,3 @@
----
-
 # TailorReach
 
 **TailorReach** is a platform designed to simplify and personalize customer engagement for solopreneurs, sales professionals, and SMBs. By leveraging sentiment analysis, TailorReach helps users create personalized outreach messages based on each customer’s unique motivators.
@@ -32,5 +30,4 @@ Check out our demo video: [Link](https://www.youtube.com/watch?v=zO0kKSgBAU4&ab_
 
 You can view our [roadmap here](https://ctf.aymnmohd.tech/tailorreach/roadmap).
 
----
-
+Building in Public.
